@@ -26,8 +26,13 @@ app.get('/api/users/:id/exercises', (req, res) => {
 })
 
 // Create New User
-app.get('/api/users/', (req, res) => {
-  res.status(200).json({ message: 'Hello you can create user here' })
+app.post('/api/users/', async (req, res) => {
+  const userCreated = await User.create({ username: req.body.username })
+  if (!userCreated) {
+    res.status(400).json({ error: 'Something went wrong!' })
+  } else {
+    res.status(200).json({ message: 'User Created Successfully!' })
+  }
 })
 
 
