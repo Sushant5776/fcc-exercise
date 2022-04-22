@@ -21,20 +21,43 @@ mongoose.connect(process.env.MONGO_URI, (error) => {
 })
 
 // Create Exercise Record
-app.get('/api/users/:id/exercises', (req, res) => {
-  res.status(200).json({ params: req.params.id })
+app.post('/api/users/:id/exercises', async (req, res) => {
+  const uid = req.params.id
+  const user = await User.findById(uid)
+
+  if (user) {
+    const date = new Date(req.body.date).toDateString()
+    if (date === 'Invalid Date') {
+      const currentDate = new Date(Date.now()).toDateString()
+      delete req.body.date
+      const exercise = await Exercise.create({ description: req.body.description, duration: req.body.duration, uid, date: currentDate })
+      const { date, duration, description } = exercise
+      res.status(200).json({ _id: uid, username: user.username, date, duration, description })
+    } else {
+      const dateFromReq = new Date(req.body.date).toDateString()
+      const exercise = await Exercise.create({ description: req.body.description, duration: req.body.duration, uid, date: dateFromReq })
+      const { date, duration, description } = exercise
+      res.status(200).json({ _id: uid, username: user.username, date, duration, description })
+    }
+  } else {
+    res.status(400).json({ error: `User with id -> ${ req.params.id } does not exists!` })
+  }
 })
 
 // Create New User
 app.post('/api/users/', async (req, res) => {
-  const userCreated = await User.create({ username: req.body.username })
-  if (!userCreated) {
+  const user = await User.create({ username: req.body.username })
+  if (!user) {
     res.status(400).json({ error: 'Something went wrong!' })
   } else {
-    res.status(200).json({ message: 'User Created Successfully!' })
+    res.status(200).json(user)
   }
 })
 
+app.get('/api/users', async (_req, res) => {
+  const users = await User.find({})
+  res.status(200).json({ users })
+})
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
