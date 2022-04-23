@@ -54,6 +54,20 @@ app.post('/api/users/', async (req, res) => {
   }
 })
 
+// Get logs of exercises for :id user.
+app.get('/api/users/:id/logs', async (req, res) => {
+  const uid = req.params.id
+  const user = await User.findById(uid).select("-__v")
+  if (user) {
+    const exercises = await Exercise.find({ uid }).select('duration date description -_id')
+    const resObj = { ...user._doc, logs: exercises }
+    res.json(resObj)
+  } else {
+    res.status(404).json({ error: `User does not exists with id -> ${ uid }` })
+  }
+})
+
+// Get all users
 app.get('/api/users', async (_req, res) => {
   const users = await User.find({})
   res.status(200).json({ users })
