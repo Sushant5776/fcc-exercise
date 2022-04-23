@@ -26,19 +26,14 @@ app.post('/api/users/:id/exercises', async (req, res) => {
   const user = await User.findById(uid)
 
   if (user) {
+    const myExercise = { description: req.body.description, duration: req.body.duration, uid }
     const date = new Date(req.body.date).toDateString()
-    if (date === 'Invalid Date') {
-      const currentDate = new Date(Date.now()).toDateString()
-      delete req.body.date
-      const exercise = await Exercise.create({ description: req.body.description, duration: req.body.duration, uid, date: currentDate })
-      const { date, duration, description } = exercise
-      res.status(200).json({ _id: uid, username: user.username, date, duration, description })
-    } else {
-      const dateFromReq = new Date(req.body.date).toDateString()
-      const exercise = await Exercise.create({ description: req.body.description, duration: req.body.duration, uid, date: dateFromReq })
-      const { date, duration, description } = exercise
-      res.status(200).json({ _id: uid, username: user.username, date, duration, description })
+    if (date !== 'Invalid Date') {
+      myExercise.date = date
     }
+    const exercise = await Exercise.create(myExercise)
+    const { date: savedDate, duration, description } = exercise
+    res.status(200).json({ _id: uid, username: user.username, date: savedDate.toDateString(), duration, description })
   } else {
     res.status(400).json({ error: `User with id -> ${ req.params.id } does not exists!` })
   }
@@ -55,12 +50,13 @@ app.post('/api/users/', async (req, res) => {
 })
 
 app.get('/api/users/:id/logs', async (req, res) => {
+  const { from, to, limit } = req.query
   const uid = req.params.id
   const user = await User.findById(uid).select("-__v")
   if (user) {
-    const exercises = await Exercise.find({ uid }).select('duration date description -_id')
-    const resObj = { ...user._doc, count: exercises.length, log: exercises }
-    res.json(resObj)
+    const exercises = await Exercise.find(from && to ? { uid, date: { $gte: new Date(from), $lte: new Date(to) } } : { uid }).select('duration date description -_id').limit(limit || 0)
+    const resObj = { ...user._doc, count: exercises.length, log: exercises.map(exercise => ({ ...exercise._doc, date: exercise.date.toDateString() })) }
+    res.status(200).json(resObj)
   } else {
     res.status(404).json({ error: `User does not exists with id -> ${ uid }` })
   }
