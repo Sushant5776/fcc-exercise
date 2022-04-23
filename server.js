@@ -59,7 +59,7 @@ app.get('/api/users/:id/logs', async (req, res) => {
   const user = await User.findById(uid).select("-__v")
   if (user) {
     const exercises = await Exercise.find({ uid }).select('duration date description -_id')
-    const resObj = { ...user._doc, count: exercises.length, logs: exercises }
+    const resObj = { ...user._doc, count: exercises.length, log: exercises }
     res.json(resObj)
   } else {
     res.status(404).json({ error: `User does not exists with id -> ${ uid }` })
