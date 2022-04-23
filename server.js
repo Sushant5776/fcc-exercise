@@ -69,7 +69,7 @@ app.get('/api/users/:id/logs', async (req, res) => {
 // Get all users
 app.get('/api/users', async (_req, res) => {
   const users = await User.find({})
-  res.status(200).json({ users })
+  res.status(200).json(users)
 })
 
 const listener = app.listen(process.env.PORT || 3000, () => {
